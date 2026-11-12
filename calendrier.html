@@ -29,15 +29,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .d.s{background:var(--sel);color:var(--selt);border-color:var(--sel)}
 .d i{font-style:normal;font-size:.7rem;display:flex;justify-content:space-between;opacity:.85}
 .e{border:0;background:none;cursor:default}
-aside{min-height:100dvh;max-width:760px;margin:auto;padding:16px 20px 24px;display:flex;flex-direction:column}
-.big{font-size:7rem;line-height:1;color:var(--ac)}
+aside{height:100dvh;overflow:hidden;max-width:760px;margin:auto;padding:14px 20px;display:flex;flex-direction:column;text-align:center}
+.big{font-size:clamp(3.5rem,13vh,6rem);line-height:1;color:var(--ac)}
 .top{display:flex;gap:14px;align-items:center;justify-content:space-between}
-h2{font-size:1.25rem;text-transform:capitalize}
+h2{font-size:1.4rem}
 .ho{color:var(--ho);font-weight:600}
-.saint{font-size:1.15rem;margin:10px 0 2px}
-dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:16px 0;font-size:1.1rem}
+.saint{font-size:1.3rem;margin:8px 0}.saint small{font-size:.75em;opacity:.55;font-weight:400}.wd{font:600 1.5rem "Palatino Linotype",Palatino,Georgia,serif;text-transform:capitalize}svg[role=img]{display:block;margin:6px auto}
+dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:10px 0;font-size:1rem}
 dt{color:var(--mu)}dd{margin:0;text-align:right}
-textarea{width:100%;flex:1;min-height:120px;background:var(--cd);border:1px solid var(--ln);border-radius:8px;padding:8px;resize:vertical}
+textarea{width:100%;flex:1;min-height:56px;text-align:left;background:var(--cd);border:1px solid var(--ln);border-radius:8px;padding:8px;resize:vertical}
 .mu{color:var(--mu);font-size:.85rem}
 </style></head><body>
 <nav id="dr" aria-label="Calendrier">
@@ -91,7 +91,7 @@ function moon(d){
  return{age,p,ill:(1-Math.cos(2*Math.PI*p))/2,n,full:Math.abs(age-SY/2)<.5,nw:age<.5||age>=SY-.5}}
 function moonSvg(p){
  const r=24,c=Math.cos(2*Math.PI*p),rx=r*Math.abs(c),wax=p<.5,o=wax?1:0,i=wax?(c>0?0:1):(c>0?1:0);
- return `<svg width="96" height="96" viewBox="-28 -28 56 56" role="img" aria-label="Phase de la lune"><circle r="${r}" fill="none" stroke="var(--mu)" stroke-width="1.5"/><g transform="${P.lat<0?"scale(-1,1)":""}"><path d="M0 ${-r}A${r} ${r} 0 0 ${o} 0 ${r}A${rx} ${r} 0 0 ${i} 0 ${-r}Z" fill="var(--fg)"/></g></svg>`}
+ return `<svg width="72" height="72" viewBox="-28 -28 56 56" role="img" aria-label="Phase de la lune"><circle r="${r}" fill="none" stroke="var(--mu)" stroke-width="1.5"/><g transform="${P.lat<0?"scale(-1,1)":""}"><path d="M0 ${-r}A${r} ${r} 0 0 ${o} 0 ${r}A${rx} ${r} 0 0 ${i} 0 ${-r}Z" fill="var(--fg)"/></g></svg>`}
 function sun(d){
  const R=Math.PI/180,t=(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),12)/864e5+2440587.5-2451545)/36525,
  L=(280.46646+t*36000.76983)%360*R,Ma=(357.52911+t*35999.05029)*R,e=.016708634-4.2037e-5*t,
@@ -120,10 +120,10 @@ function panel(){
  const d=sel,y=d.getFullYear(),m=d.getMonth(),dd=d.getDate(),mo=moon(d),su=sun(d),ho=holi(d),
  doy=Math.round((Date.UTC(y,m,dd)-Date.UTC(y,0,0))/864e5),tot=(y%4==0&&y%100!=0)||y%400==0?366:365,
  ln=su?Math.floor(su.l/60)+" h "+String(Math.round(su.l%60)).padStart(2,"0"):"—";
- $("#p").innerHTML=`<div class="hb"><button class="b" id="oc" aria-label="Ouvrir le calendrier">☰ Calendrier</button><span class="sp"></span><button class="b" id="pd" aria-label="Jour précédent">‹</button><button class="b" id="nd" aria-label="Jour suivant">›</button></div><div class="top"><div class="big">${dd}</div>${moonSvg(mo.p)}</div>
- <h2>${J[d.getDay()]} ${dd} ${M[m]} ${y}</h2>
+ $("#p").innerHTML=`<div class="wd">${J[d.getDay()]}</div><div class="big">${dd}</div>
+ <h2>${M[m]} ${y}</h2>
  ${ho?`<div class="ho">${ho}</div>`:""}
- <div class="saint">Saint·e du jour : ${S[m][dd-1]}</div>
+ <div class="saint"><small>Saint·e du jour :</small> <b>${S[m][dd-1]}</b></div>${moonSvg(mo.p)}
  <dl><dt>Lever du soleil</dt><dd>${su?hm(su.r):"—"}</dd>
  <dt>Coucher du soleil</dt><dd>${su?hm(su.s):"—"}</dd>
  <dt>Durée du jour</dt><dd>${ln}</dd>
@@ -135,7 +135,6 @@ function panel(){
  <dt>Jours restants</dt><dd>${tot-doy}</dd></dl>
  <textarea id="nt" placeholder="Note du jour" aria-label="Note du jour">${(N[K(d)]||"").replace(/</g,"&lt;")}</textarea>
  <p class="mu">Lieu : ${P.nom} <button class="b" id="gp">Ma position</button></p>`;
- $("#oc").onclick=()=>dr(1);$("#pd").onclick=()=>go(add(sel,-1));$("#nd").onclick=()=>go(add(sel,1));
  $("#nt").oninput=e=>{const v=e.target.value.trim();v?N[K(d)]=v:delete N[K(d)];try{localStorage.setItem("cal-notes",JSON.stringify(N))}catch(x){}grid()};
  $("#gp").onclick=()=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(q=>{P={lat:q.coords.latitude,lon:q.coords.longitude,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,nom:"position locale"};panel()});
  $("#dt").value=y+"-"+String(m+1).padStart(2,"0")+"-"+String(dd).padStart(2,"0")}
@@ -146,14 +145,16 @@ $("#to").onclick=()=>{const t=new Date();t.setHours(12,0,0,0);go(t);dr(0)};
 $("#dt").onchange=e=>{const[a,b,c]=e.target.value.split("-").map(Number);if(a){go(new Date(a,b-1,c,12));dr(0)}};
 $("#g").onclick=e=>{const b=e.target.closest(".d");if(b){sel=new Date(view.getFullYear(),view.getMonth(),+b.dataset.i,12);grid();panel();dr(0)}};
 document.onkeydown=e=>{if(/TEXTAREA|INPUT/.test(e.target.tagName))return;
- const k={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];if(k){e.preventDefault();go(add(sel,k))}};
+ const o=$("#dr").classList.contains("o"),k=e.key;if(k=="ArrowRight"&&!o)dr(1);else if(k=="ArrowLeft"&&o)dr(0);else if(k=="ArrowUp"&&!o)go(add(sel,1));else if(k=="ArrowDown"&&!o)go(add(sel,-1));else return;e.preventDefault()};
 function dr(o){$("#dr").classList.toggle("o",!!o);$("#sc").classList.toggle("o",!!o)}
 window.back=()=>{const o=$("#dr").classList.contains("o");if(o)dr(0);return o};
 $("#sc").onclick=()=>dr(0);
 addEventListener("keydown",e=>{if(e.key=="Escape")dr(0)});
 let sx=null,sy=0;
 addEventListener("touchstart",e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY},{passive:true});
-addEventListener("touchend",e=>{if(sx==null)return;const t=e.changedTouches[0],dx=t.clientX-sx,o=$("#dr").classList.contains("o");
- if(Math.abs(t.clientY-sy)<60&&!/TEXTAREA|INPUT/.test(e.target.tagName)){if(!o&&sx<innerWidth*.25&&dx>80)dr(1);else if(o&&dx<-60)dr(0)}sx=null});
+addEventListener("touchend",e=>{if(sx==null)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy,o=$("#dr").classList.contains("o");sx=null;
+ if(/TEXTAREA|INPUT/.test(e.target.tagName))return;
+ if(Math.abs(dx)>Math.abs(dy)){if(Math.abs(dy)<60){if(!o&&dx>80)dr(1);else if(o&&dx<-60)dr(0)}}
+ else if(!o&&Math.abs(dx)<60&&Math.abs(dy)>80)go(add(sel,dy<0?1:-1))});
 grid();panel();
 </script></body></html>
