@@ -34,7 +34,7 @@ aside{height:100dvh;overflow:hidden;max-width:760px;margin:auto;padding:14px 20p
 .top{display:flex;gap:14px;align-items:center;justify-content:space-between}
 h2{font-size:1.4rem}
 .ho{color:var(--ho);font-weight:600}
-.sr{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:8px 0}.lt{opacity:.55}.saint{font-size:1.3rem;margin:0}.saint small{font-size:.75em;opacity:.55;font-weight:400}.wd{font:600 1.5rem "Palatino Linotype",Palatino,Georgia,serif;text-transform:capitalize}svg[role=img]{display:block;margin:6px auto}
+.sr{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:8px 0}.lt{opacity:.55}.gy{color:var(--mu)}.bk{display:grid;grid-template-columns:1fr 1fr;align-items:center;margin:8px 0}.bk>div{text-align:right;white-space:nowrap;font-size:min(1rem,4.3vw);line-height:1.5}.saint{font-size:1.3rem;margin:0}.saint small{font-size:.75em;opacity:.55;font-weight:400}.wd{font:600 1.5rem "Palatino Linotype",Palatino,Georgia,serif;text-transform:capitalize}svg[role=img]{display:block;margin:0 auto}
 dl{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin:10px 0;font-size:min(1rem,4.3vw)}
 dt{color:var(--mu);text-align:left;white-space:nowrap}dd{margin:0;text-align:right;white-space:nowrap}
 textarea{width:100%;flex:1;min-height:56px;text-align:left;background:var(--cd);border:1px solid var(--ln);border-radius:8px;padding:8px;resize:vertical}
@@ -85,13 +85,14 @@ function hol(y){
  [[0,"Pâques"],[1,"Lundi de Pâques"],[39,"Ascension"],[49,"Pentecôte"],[50,"Lundi de Pentecôte"]].forEach(([n,t])=>{const x=add(E,n);H[(x.getMonth()+1)+"-"+x.getDate()]=t});
  return HC[y]=H}
 const holi=d=>hol(d.getFullYear())[(d.getMonth()+1)+"-"+d.getDate()];
+function sunSvg(){let r="";for(let i=0;i<8;i++){const a=i*Math.PI/4,c=Math.cos(a),n=Math.sin(a);r+=`<line x1="${(14*c).toFixed(1)}" y1="${(14*n).toFixed(1)}" x2="${(22*c).toFixed(1)}" y2="${(22*n).toFixed(1)}"/>`}return `<svg width="68" height="68" viewBox="-28 -28 56 56" role="img" aria-label="Soleil"><circle r="8" fill="var(--fg)"/><g stroke="var(--fg)" stroke-width="2.5" stroke-linecap="round">${r}</g></svg>`}
 function moon(d){
  const jd=d.getTime()/864e5+2440587.5,age=((jd-2451550.1)%SY+SY)%SY,p=age/SY,
  n=p<.03||p>.97?"Nouvelle lune":p<.22?"Premier croissant":p<.28?"Premier quartier":p<.47?"Gibbeuse croissante":p<.53?"Pleine lune":p<.72?"Gibbeuse décroissante":p<.78?"Dernier quartier":"Dernier croissant";
  return{age,p,ill:(1-Math.cos(2*Math.PI*p))/2,n,full:Math.abs(age-SY/2)<.5,nw:age<.5||age>=SY-.5}}
 function moonSvg(p){
  const r=24,c=Math.cos(2*Math.PI*p),rx=r*Math.abs(c),wax=p<.5,o=wax?1:0,i=wax?(c>0?0:1):(c>0?1:0);
- return `<svg width="72" height="72" viewBox="-28 -28 56 56" role="img" aria-label="Phase de la lune"><circle r="${r}" fill="none" stroke="var(--mu)" stroke-width="1.5"/><g transform="${P.lat<0?"scale(-1,1)":""}"><path d="M0 ${-r}A${r} ${r} 0 0 ${o} 0 ${r}A${rx} ${r} 0 0 ${i} 0 ${-r}Z" fill="var(--fg)"/></g></svg>`}
+ return `<svg width="68" height="68" viewBox="-28 -28 56 56" role="img" aria-label="Phase de la lune"><circle r="${r}" fill="none" stroke="var(--mu)" stroke-width="1.5"/><g transform="${P.lat<0?"scale(-1,1)":""}"><path d="M0 ${-r}A${r} ${r} 0 0 ${o} 0 ${r}A${rx} ${r} 0 0 ${i} 0 ${-r}Z" fill="var(--fg)"/></g></svg>`}
 function sun(d){
  const R=Math.PI/180,t=(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),12)/864e5+2440587.5-2451545)/36525,
  L=(280.46646+t*36000.76983)%360*R,Ma=(357.52911+t*35999.05029)*R,e=.016708634-4.2037e-5*t,
@@ -122,16 +123,11 @@ function panel(){
  ln=su?Math.floor(su.l/60)+" h "+String(Math.round(su.l%60)).padStart(2,"0"):"—";
  $("#p").innerHTML=`<div id="hd"><div class="wd">${J[d.getDay()]}</div><div class="big">${dd}</div>
  <h2>${M[m]} ${y}</h2>
- <div class="sr"><div class="saint"><small>Saint·e</small> <b>${S[m][dd-1]}</b></div>${ho?`<div class="ho">${ho}</div>`:""}</div></div>${moonSvg(mo.p)}
- <dl><dt>Lever du soleil</dt><dd>${su?hm(su.r):"—"}</dd>
- <dt>Coucher du soleil</dt><dd>${su?hm(su.s):"—"}</dd>
- <dt>Durée du jour</dt><dd>${ln}</dd>
- <dt>Lune</dt><dd>${Math.round(mo.ill*100)} % <span class="lt">${mo.n}</span></dd>
- <dt>Âge de la lune</dt><dd>${mo.age.toFixed(1).replace(".",",")} j</dd>
- <dt>Saison</dt><dd>${season(d)}</dd>
- <dt>Jour de l’année</dt><dd>${doy} / ${tot}</dd>
+ <div class="sr"><div class="saint"><small>Saint·e</small> <b>${S[m][dd-1]}</b></div>${ho?`<div class="ho">${ho}</div>`:""}</div></div><div class="bk">${sunSvg()}<div><span class="gy">lever</span> ${su?hm(su.r):"—"}<br><span class="gy">coucher</span> ${su?hm(su.s):"—"}<br><span class="gy">durée</span> ${ln}</div></div>
+ <div class="bk">${moonSvg(mo.p)}<div>${Math.round(mo.ill*100)} %<br><span class="lt">${mo.n}</span><br><span class="gy">âge</span> ${mo.age.toFixed(1).replace(".",",")} ${mo.age<2?"jour":"jours"}</div></div>
+ <dl><dt>Jour de l’année</dt><dd>${doy} / ${tot} <span class="lt">(−${tot-doy})</span></dd>
  <dt>Semaine</dt><dd>${wk(d)}</dd>
- <dt>Jours restants</dt><dd>${tot-doy}</dd></dl>
+ <dt>Saison</dt><dd>${season(d)}</dd></dl>
  <textarea id="nt" placeholder="Note du jour" aria-label="Note du jour">${(N[K(d)]||"").replace(/</g,"&lt;")}</textarea>
  <p class="mu">Lieu : ${P.nom} <button class="b" id="gp">Ma position</button></p>`;
  $("#nt").oninput=e=>{const v=e.target.value.trim();v?N[K(d)]=v:delete N[K(d)];try{localStorage.setItem("cal-notes",JSON.stringify(N))}catch(x){}grid()};
