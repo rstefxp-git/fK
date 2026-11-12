@@ -1,0 +1,99 @@
+name: apk
+on:
+  push:
+    paths: ['calendrier.html', '.github/workflows/apk.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Projet Android
+        run: |
+          mkdir -p app/src/main/java/nc/html app/src/main/assets app/src/main/res/values app/src/main/res/values-night
+          cp calendrier.html app/src/main/assets/index.html
+          cat > settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+          include ':app'
+          EOF
+          cat > build.gradle <<'EOF'
+          plugins { id 'com.android.application' version '8.5.2' apply false }
+          EOF
+          cat > app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'nc.html'
+            compileSdk 34
+            defaultConfig { applicationId 'nc.html.mobile'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+          }
+          EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+            <application android:label="Calendrier" android:theme="@style/T">
+              <activity android:name=".M" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN"/>
+                  <category android:name="android.intent.category.LAUNCHER"/>
+                </intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          EOF
+          cat > app/src/main/res/values/t.xml <<'EOF'
+          <resources><style name="T" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar"/></resources>
+          EOF
+          cat > app/src/main/res/values-night/t.xml <<'EOF'
+          <resources><style name="T" parent="@android:style/Theme.DeviceDefault.NoActionBar"/></resources>
+          EOF
+          cat > app/src/main/java/nc/html/M.java <<'EOF'
+          package nc.html;
+          import android.Manifest;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.GeolocationPermissions;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          public class M extends Activity {
+            WebView w;
+            @Override protected void onCreate(Bundle b) {
+              super.onCreate(b);
+              w = new WebView(this);
+              WebSettings s = w.getSettings();
+              s.setJavaScriptEnabled(true);
+              s.setDomStorageEnabled(true);
+              s.setGeolocationEnabled(true);
+              w.setWebChromeClient(new WebChromeClient() {
+                @Override public void onGeolocationPermissionsShowPrompt(String o, GeolocationPermissions.Callback c) {
+                  if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != 0)
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                  c.invoke(o, true, false);
+                }
+              });
+              setContentView(w);
+              if (b == null) w.loadUrl("file:///android_asset/index.html"); else w.restoreState(b);
+            }
+            @Override protected void onSaveInstanceState(Bundle b) { super.onSaveInstanceState(b); w.saveState(b); }
+            @Override public void onBackPressed() {
+              w.evaluateJavascript("(window.back&&back())", r -> { if (!"true".equals(r)) finish(); });
+            }
+          }
+          EOF
+      - name: Compiler
+        run: |
+          gradle assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk html-mobile.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: html-mobile
+          path: html-mobile.apk
