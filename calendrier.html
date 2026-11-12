@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calendrier & Éphéméride</title>
+<style>
+:root{--bg:#e9f0ef;--fg:#0f2a35;--mu:#587079;--cd:#f8fbfa;--ac:#12707f;--ln:#cbdad8;--ho:#b0306a;--sel:#0f2a35;--selt:#f8fbfa}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1a20;--fg:#e3eeed;--mu:#8aa3aa;--cd:#122730;--ac:#4cc3d3;--ln:#23404a;--ho:#f07eb0;--sel:#e3eeed;--selt:#0b1a20}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif}
+#dr{position:fixed;inset:0 auto 0 0;width:min(94vw,440px);background:var(--bg);border-right:1px solid var(--ln);padding:16px;overflow:auto;transform:translateX(-102%);visibility:hidden;transition:transform .25s,visibility .25s;z-index:3}
+#dr.o{transform:none;visibility:visible}
+#sc{position:fixed;inset:0;background:#0008;opacity:0;pointer-events:none;transition:opacity .25s;z-index:2}
+#sc.o{opacity:1;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){#dr,#sc{transition:none}}
+.hb{display:flex;gap:8px;align-items:center;margin-bottom:18px}.hb .sp{flex:1}
+h1,h2,.big,.saint{font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;font-weight:600;margin:0}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:1.9rem;flex:1;min-width:10ch;text-transform:capitalize}
+button,input{font:inherit;color:inherit}
+.b{background:var(--cd);border:1px solid var(--ln);border-radius:8px;padding:6px 12px;cursor:pointer}
+.b:hover{border-color:var(--ac)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.hd{text-align:center;color:var(--mu);font-size:.85rem;padding:4px 0}
+.d{aspect-ratio:1/.92;background:var(--cd);border:1px solid var(--ln);border-radius:6px;cursor:pointer;position:relative;padding:4px 6px;text-align:left;font-size:1.05rem;display:flex;flex-direction:column;justify-content:space-between}
+.d.w{color:var(--mu)}
+.d.h{color:var(--ho);font-weight:700}
+.d.t{border:2px solid var(--ac)}
+.d.s{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.d i{font-style:normal;font-size:.7rem;display:flex;justify-content:space-between;opacity:.85}
+.e{border:0;background:none;cursor:default}
+aside{min-height:100dvh;max-width:760px;margin:auto;padding:16px 20px 24px;display:flex;flex-direction:column}
+.big{font-size:7rem;line-height:1;color:var(--ac)}
+.top{display:flex;gap:14px;align-items:center;justify-content:space-between}
+h2{font-size:1.25rem;text-transform:capitalize}
+.ho{color:var(--ho);font-weight:600}
+.saint{font-size:1.15rem;margin:10px 0 2px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:16px 0;font-size:1.1rem}
+dt{color:var(--mu)}dd{margin:0;text-align:right}
+textarea{width:100%;flex:1;min-height:120px;background:var(--cd);border:1px solid var(--ln);border-radius:8px;padding:8px;resize:vertical}
+.mu{color:var(--mu);font-size:.85rem}
+</style></head><body>
+<nav id="dr" aria-label="Calendrier">
+<div class="bar">
+<button class="b" id="pm" aria-label="Mois précédent">‹</button>
+<h1 id="ti"></h1>
+<button class="b" id="nm" aria-label="Mois suivant">›</button>
+<button class="b" id="to">Aujourd’hui</button>
+<input class="b" type="date" id="dt" aria-label="Aller à une date">
+</div>
+<div class="g" id="g"></div>
+</nav>
+<div id="sc"></div>
+<aside id="p"></aside>
+<script>
+const M="janvier février mars avril mai juin juillet août septembre octobre novembre décembre".split(" "),
+J="dimanche lundi mardi mercredi jeudi vendredi samedi".split(" "),
+S=[
+"Marie|Basile|Geneviève|Odilon|Édouard|Mélaine|Raymond|Lucien|Alix|Guillaume|Paulin|Tatiana|Yvette|Nina|Rémi|Marcel|Roseline|Prisca|Marius|Sébastien|Agnès|Vincent|Barnard|François de Sales|Paul|Tite|Angèle|Thomas d’Aquin|Gildas|Martine|Marcelle",
+"Ella|Théophane|Blaise|Véronique|Agathe|Gaston|Eugénie|Jacqueline|Apolline|Arnaud|Séverin|Félix|Béatrice|Valentin|Claude|Julienne|Alexis|Bernadette|Gabin|Aimée|Pierre Damien|Isabelle|Lazare|Modeste|Roméo|Nestor|Honorine|Romain|Auguste",
+"Aubin|Charles le Bon|Guénolé|Casimir|Olive|Colette|Félicité|Jean de Dieu|Françoise|Vivien|Rosine|Justine|Rodrigue|Mathilde|Louise|Bénédicte|Patrice|Cyrille|Joseph|Herbert|Clémence|Léa|Victorien|Karine|Humbert|Larissa|Habib|Gontran|Gwladys|Amédée|Benjamin",
+"Hugues|Sandrine|Richard|Isidore|Irène|Marcellin|Jean-Baptiste de la Salle|Julie|Gautier|Fulbert|Stanislas|Jules|Ida|Maxime|Paterne|Benoît-Joseph|Anicet|Parfait|Emma|Odette|Anselme|Alexandre|Georges|Fidèle|Marc|Alida|Zita|Valérie|Catherine de Sienne|Robert",
+"Jérémie|Boris|Philippe et Jacques|Sylvain|Judith|Prudence|Gisèle|Désiré|Pacôme|Solange|Estelle|Achille|Rolande|Matthias|Denise|Honoré|Pascal|Éric|Yves|Bernardin|Constantin|Émile|Didier|Donatien|Sophie|Bérenger|Augustin|Germain|Aymar|Ferdinand|Visitation",
+"Justin|Blandine|Kévin|Clotilde|Igor|Norbert|Gilbert|Médard|Diane|Landry|Barnabé|Guy|Antoine de Padoue|Élisée|Germaine|Jean-François Régis|Hervé|Léonce|Romuald|Silvère|Rodolphe|Alban|Audrey|Jean-Baptiste|Prosper|Anthelme|Fernand|Irénée|Pierre et Paul|Martial",
+"Thierry|Martinien|Thomas|Florent|Antoine|Mariette|Raoul|Thibaut|Amandine|Ulrich|Benoît|Olivier|Henri et Joël|Camille|Donald|Notre-Dame du Mont-Carmel|Charlotte|Frédéric|Arsène|Marina|Victor|Marie-Madeleine|Brigitte|Christine|Jacques|Anne et Joachim|Nathalie|Samson|Marthe|Juliette|Ignace de Loyola",
+"Alphonse|Julien Eymard|Lydie|Jean-Marie Vianney|Abel|Transfiguration|Gaétan|Dominique|Amour|Laurent|Claire|Clarisse|Hippolyte|Evrard|Marie|Armel|Hyacinthe|Hélène|Jean Eudes|Bernard|Christophe|Fabrice|Rose de Lima|Barthélemy|Louis|Natacha|Monique|Augustin|Sabine|Fiacre|Aristide",
+"Gilles|Ingrid|Grégoire|Rosalie|Raïssa|Bertrand|Reine|Adrien|Alain|Inès|Adelphe|Apollinaire|Aimé|Croix Glorieuse|Roland|Édith|Renaud|Nadège|Émilie|Davy|Matthieu|Maurice|Constant|Thècle|Hermann|Côme et Damien|Vincent de Paul|Venceslas|Michel|Jérôme",
+"Thérèse de l’Enfant-Jésus|Léger|Gérard|François d’Assise|Fleur|Bruno|Serge|Pélagie|Denis|Ghislain|Firmin|Wilfried|Géraud|Juste|Thérèse d’Avila|Edwige|Baudouin|Luc|René|Adeline|Céline|Élodie|Jean de Capistran|Florentin|Crépin|Dimitri|Émeline|Jude|Narcisse|Bienvenue|Quentin",
+"Toussaint|Défunts|Hubert|Charles|Sylvie|Bertille|Carine|Geoffroy|Théodore|Léon|Martin|Christian|Brice|Sidoine|Albert|Marguerite|Élisabeth|Aude|Tanguy|Edmond|Albert le Grand|Cécile|Clément|Flora|Catherine|Delphine|Séverin|Jacques de la Marche|Saturnin|André",
+"Florence|Viviane|François-Xavier|Barbara|Gérald|Nicolas|Ambroise|Immaculée Conception|Pierre Fourier|Romaric|Daniel|Jeanne de Chantal|Lucie|Odile|Ninon|Alice|Gaël|Gatien|Urbain|Théophile|Pierre Canisius|Françoise-Xavière|Armand|Adèle|Noël|Étienne|Jean|Innocents|David|Roger|Sylvestre"
+].map(s=>s.split("|")),
+SY=29.530588853,$=s=>document.querySelector(s);
+let P={lat:-22.27,lon:166.45,tz:"Pacific/Noumea",nom:"Nouméa"},N={},sel=new Date(),view;
+try{N=JSON.parse(localStorage.getItem("cal-notes")||"{}")}catch(e){}
+sel.setHours(12,0,0,0);view=new Date(sel.getFullYear(),sel.getMonth(),1);
+const K=d=>d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(),
+add=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n,12),
+HC={};
+function hol(y){
+ if(HC[y])return HC[y];
+ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+ h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+ mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1,E=new Date(y,mo-1,da,12),
+ H={"1-1":"Jour de l’An","5-1":"Fête du Travail","5-8":"Victoire 1945","7-14":"Fête nationale","8-15":"Assomption","9-24":"Fête de la Citoyenneté","11-1":"Toussaint","11-11":"Armistice","12-25":"Noël"};
+ [[0,"Pâques"],[1,"Lundi de Pâques"],[39,"Ascension"],[49,"Pentecôte"],[50,"Lundi de Pentecôte"]].forEach(([n,t])=>{const x=add(E,n);H[(x.getMonth()+1)+"-"+x.getDate()]=t});
+ return HC[y]=H}
+const holi=d=>hol(d.getFullYear())[(d.getMonth()+1)+"-"+d.getDate()];
+function moon(d){
+ const jd=d.getTime()/864e5+2440587.5,age=((jd-2451550.1)%SY+SY)%SY,p=age/SY,
+ n=p<.03||p>.97?"Nouvelle lune":p<.22?"Premier croissant":p<.28?"Premier quartier":p<.47?"Gibbeuse croissante":p<.53?"Pleine lune":p<.72?"Gibbeuse décroissante":p<.78?"Dernier quartier":"Dernier croissant";
+ return{age,p,ill:(1-Math.cos(2*Math.PI*p))/2,n,full:Math.abs(age-SY/2)<.5,nw:age<.5||age>=SY-.5}}
+function moonSvg(p){
+ const r=24,c=Math.cos(2*Math.PI*p),rx=r*Math.abs(c),wax=p<.5,o=wax?1:0,i=wax?(c>0?0:1):(c>0?1:0);
+ return `<svg width="96" height="96" viewBox="-28 -28 56 56" role="img" aria-label="Phase de la lune"><circle r="${r}" fill="none" stroke="var(--mu)" stroke-width="1.5"/><g transform="${P.lat<0?"scale(-1,1)":""}"><path d="M0 ${-r}A${r} ${r} 0 0 ${o} 0 ${r}A${rx} ${r} 0 0 ${i} 0 ${-r}Z" fill="var(--fg)"/></g></svg>`}
+function sun(d){
+ const R=Math.PI/180,t=(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),12)/864e5+2440587.5-2451545)/36525,
+ L=(280.46646+t*36000.76983)%360*R,Ma=(357.52911+t*35999.05029)*R,e=.016708634-4.2037e-5*t,
+ C=((1.914602-.004817*t)*Math.sin(Ma)+.019993*Math.sin(2*Ma)+.000289*Math.sin(3*Ma))*R,
+ lam=L+C-.00569*R,ep=(23.439291-.0130042*t)*R,dec=Math.asin(Math.sin(ep)*Math.sin(lam)),y=Math.tan(ep/2)**2,
+ eq=4/R*(y*Math.sin(2*L)-2*e*Math.sin(Ma)+4*e*y*Math.sin(Ma)*Math.cos(2*L)-.5*y*y*Math.sin(4*L)-1.25*e*e*Math.sin(2*Ma)),
+ cs=Math.cos(90.833*R)/(Math.cos(P.lat*R)*Math.cos(dec))-Math.tan(P.lat*R)*Math.tan(dec);
+ if(Math.abs(cs)>1)return null;
+ const ha=Math.acos(cs)/R,no=720-4*P.lon-eq,b=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());
+ return{r:b+(no-4*ha)*6e4,s:b+(no+4*ha)*6e4,l:8*ha}}
+const hm=ms=>new Date(ms).toLocaleTimeString("fr-FR",{timeZone:P.tz,hour:"2-digit",minute:"2-digit"}),
+wk=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);return Math.ceil(((t-Date.UTC(t.getUTCFullYear(),0,1))/864e5+1)/7)};
+function season(d){
+ const v=(d.getMonth()+1)*100+d.getDate(),i=v>=1221||v<320?0:v<621?1:v<922?2:3;
+ return(P.lat<0?["Été","Automne","Hiver","Printemps"]:["Hiver","Printemps","Été","Automne"])[i]}
+function grid(){
+ const y=view.getFullYear(),m=view.getMonth(),off=(new Date(y,m,1).getDay()+6)%7,n=new Date(y,m+1,0).getDate(),td=K(new Date());
+ $("#ti").textContent=M[m]+" "+y;
+ let h="lun mar mer jeu ven sam dim".split(" ").map(x=>`<div class="hd">${x}.</div>`).join("")+'<span class="e"></span>'.repeat(off);
+ for(let i=1;i<=n;i++){
+  const d=new Date(y,m,i,12),mo=moon(d),wd=d.getDay(),
+  cl="d"+(holi(d)?" h":"")+((wd==0||wd==6)?" w":"")+(K(d)==td?" t":"")+(K(d)==K(sel)?" s":"");
+  h+=`<button class="${cl}" data-i="${i}" aria-label="${J[wd]} ${i} ${M[m]}${holi(d)?", "+holi(d):""}">${i}<i><span>${mo.full?"●":mo.nw?"○":""}</span><span>${N[K(d)]?"✎":""}</span></i></button>`}
+ $("#g").innerHTML=h}
+function panel(){
+ const d=sel,y=d.getFullYear(),m=d.getMonth(),dd=d.getDate(),mo=moon(d),su=sun(d),ho=holi(d),
+ doy=Math.round((Date.UTC(y,m,dd)-Date.UTC(y,0,0))/864e5),tot=(y%4==0&&y%100!=0)||y%400==0?366:365,
+ ln=su?Math.floor(su.l/60)+" h "+String(Math.round(su.l%60)).padStart(2,"0"):"—";
+ $("#p").innerHTML=`<div class="hb"><button class="b" id="oc" aria-label="Ouvrir le calendrier">☰ Calendrier</button><span class="sp"></span><button class="b" id="pd" aria-label="Jour précédent">‹</button><button class="b" id="nd" aria-label="Jour suivant">›</button></div><div class="top"><div class="big">${dd}</div>${moonSvg(mo.p)}</div>
+ <h2>${J[d.getDay()]} ${dd} ${M[m]} ${y}</h2>
+ ${ho?`<div class="ho">${ho}</div>`:""}
+ <div class="saint">Saint·e du jour : ${S[m][dd-1]}</div>
+ <dl><dt>Lever du soleil</dt><dd>${su?hm(su.r):"—"}</dd>
+ <dt>Coucher du soleil</dt><dd>${su?hm(su.s):"—"}</dd>
+ <dt>Durée du jour</dt><dd>${ln}</dd>
+ <dt>Lune</dt><dd>${mo.n}, ${Math.round(mo.ill*100)} %</dd>
+ <dt>Âge de la lune</dt><dd>${mo.age.toFixed(1).replace(".",",")} j</dd>
+ <dt>Saison</dt><dd>${season(d)}</dd>
+ <dt>Jour de l’année</dt><dd>${doy} / ${tot}</dd>
+ <dt>Semaine</dt><dd>${wk(d)}</dd>
+ <dt>Jours restants</dt><dd>${tot-doy}</dd></dl>
+ <textarea id="nt" placeholder="Note du jour" aria-label="Note du jour">${(N[K(d)]||"").replace(/</g,"&lt;")}</textarea>
+ <p class="mu">Lieu : ${P.nom} <button class="b" id="gp">Ma position</button></p>`;
+ $("#oc").onclick=()=>dr(1);$("#pd").onclick=()=>go(add(sel,-1));$("#nd").onclick=()=>go(add(sel,1));
+ $("#nt").oninput=e=>{const v=e.target.value.trim();v?N[K(d)]=v:delete N[K(d)];try{localStorage.setItem("cal-notes",JSON.stringify(N))}catch(x){}grid()};
+ $("#gp").onclick=()=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(q=>{P={lat:q.coords.latitude,lon:q.coords.longitude,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,nom:"position locale"};panel()});
+ $("#dt").value=y+"-"+String(m+1).padStart(2,"0")+"-"+String(dd).padStart(2,"0")}
+function go(d){sel=d;view=new Date(d.getFullYear(),d.getMonth(),1);grid();panel()}
+$("#pm").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);grid()};
+$("#nm").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);grid()};
+$("#to").onclick=()=>{const t=new Date();t.setHours(12,0,0,0);go(t);dr(0)};
+$("#dt").onchange=e=>{const[a,b,c]=e.target.value.split("-").map(Number);if(a){go(new Date(a,b-1,c,12));dr(0)}};
+$("#g").onclick=e=>{const b=e.target.closest(".d");if(b){sel=new Date(view.getFullYear(),view.getMonth(),+b.dataset.i,12);grid();panel();dr(0)}};
+document.onkeydown=e=>{if(/TEXTAREA|INPUT/.test(e.target.tagName))return;
+ const k={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];if(k){e.preventDefault();go(add(sel,k))}};
+function dr(o){$("#dr").classList.toggle("o",!!o);$("#sc").classList.toggle("o",!!o)}
+window.back=()=>{const o=$("#dr").classList.contains("o");if(o)dr(0);return o};
+$("#sc").onclick=()=>dr(0);
+addEventListener("keydown",e=>{if(e.key=="Escape")dr(0)});
+let sx=null,sy=0;
+addEventListener("touchstart",e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY},{passive:true});
+addEventListener("touchend",e=>{if(sx==null)return;const t=e.changedTouches[0],dx=t.clientX-sx,o=$("#dr").classList.contains("o");
+ if(Math.abs(t.clientY-sy)<60&&!/TEXTAREA|INPUT/.test(e.target.tagName)){if(!o&&sx<innerWidth*.25&&dx>80)dr(1);else if(o&&dx<-60)dr(0)}sx=null});
+grid();panel();
+</script></body></html>
